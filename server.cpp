@@ -1,8 +1,6 @@
 /* The port number is passed as an argument */
 //#define _BSD_SOURCE
 #include <arpa/inet.h>
-#include <lwpr.h>
-#include <lwpr.hh>
 #include <math.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -13,96 +11,40 @@
 #include <time.h>
 #include <unistd.h>
 #include <iostream>
+#include "LWPRandPC_DCN.hh"
 
-#ifdef WIN32
-#define SEED_RAND()     srand(time(NULL))
-#define URAND()         (((double)rand())/ (double)RAND_MAX)
+// #ifdef WIN32
+// #define SEED_RAND()     srand(time(NULL))
+// #define URAND()         (((double)rand())/ (double)RAND_MAX)
+//
+// #else
+// #define SEED_RAND()     srand48(time(NULL))
+// #define URAND()         drand48()
+// #endif
 
-#else
-#define SEED_RAND()     srand48(time(NULL))
-#define URAND()         drand48()
-#endif
-
-using namespace std;
 
 void error(const char *msg){
   perror(msg);
   exit(1);
 }
 
-void display_vector(const char *name, vector<double> v){
-  cout << name << ": ";
-  for (vector<double>::const_iterator i = v.begin(); i != v.end(); ++i)
-    cout << *i << ' ';
-  cout << endl;
+void display_vector(const char *name, std::vector<double> v){
+  std::cout << name << ": ";
+  for (std::vector<double>::const_iterator i = v.begin(); i != v.end(); ++i)
+    std::cout << *i << ' ';
+  std::cout << std::endl;
 }
 
 
-class MLandC: public LWPR_Object {  // inherits from LWPR_Object
-  public:
-    vector<double> wt;
-    vector<double> w;
-    vector<double> w_pc_dcn;
-    vector<double> w_mf_dcn;
 
-    int ML_prediction(double input_lwpr, double efferent_copy);
-    int ML_rfs();
-    void ML_update(double input_lwpr, double train_lwpr);
-
-    // Constructor
-    MLandC(int nin, int nout) : LWPR_Object(nin, nout){
-      cout << "MLandC, child of LWPR_Object, class constructor" << endl;
-
-      wt.push_back(0);
-      w.push_back(0);
-      w_pc_dcn.push_back(0);
-      w_mf_dcn.push_back(0);
-
-      setInitD(50);
-      setInitAlpha(250);
-      initLambda(0.99);
-      tauLambda(0.9);
-      finalLambda(0.99999);
-      wGen(0.2);
-      diagOnly(1);
-      updateD(0);
-      metaRate(0.3);
-      // addThreshold(0.95);
-    }
-};
-
-// // Member functions
-// int MLandC::ML_prediction(double input_lwpr, double fb_signal){
-//   // LWPR prediction
-//   predict(input_lwpr);
-//
-//   // weights - PC dendrites
-//
-//   // DCN - adder/substractor
-//
-//   // DCN learning rules
-//
-//   return 0 //output_ml, output_dcn
-// }
-
-// void MLandC::ML_update(double input_lwpr, double efferent_copy){
-//   update(input_lwpr, efferent_copy);
-// }
-//
-// int MLandC::ML_rfs(){
-//   int num_rfs = numRFS();
-//   cout << "num_rfs: " << num_rfs << '\n';
-//   return num_rfs;
-// }
-
-
-// extern "C" int C_main(int, char**);
 int main(int argc, char *argv[]){
+  using namespace std;
+
   // LWPR object
   int nin = 10;
   int nout = 1;
   int njoints = 2;
-  MLandC model(nin, nout);
+  LWPR_andPC_DCN ml_dcn_1(nin, nout, njoints);
 
   // Server variables
   int sockfd, newsockfd, portno;
@@ -175,10 +117,15 @@ int main(int argc, char *argv[]){
     bzero(buffer,256);
 
     // LWPR cycle
+    double fb_signal_torque = 2.3;
+    doubleVec efferent_copy_torque;
+    efferent_copy_torque.push_back(2.3);
+    doubleVec input_lwpr;
+    input_lwpr.push_back(32.0);
 
+    ml_dcn_1.ML_prediction(input_lwpr, fb_signal_torque);
 
-
-
+    ml_dcn_1.ML_update(input_lwpr, efferent_copy_torque);
 
 
 

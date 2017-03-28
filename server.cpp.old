@@ -1,7 +1,7 @@
+/* The port number is passed as an argument */
+//#define _BSD_SOURCE
 #include <arpa/inet.h>
-// extern "C" {
-// #include <lwpr.h>
-// }
+#include <lwpr.h>
 #include <lwpr.hh>
 #include <math.h>
 #include <netinet/in.h>
@@ -38,30 +38,74 @@ void display_vector(const char *name, vector<double> v){
 }
 
 
-class MLandC{  // inherits from LWPR_Object
+class MLandC: public LWPR_Object {  // inherits from LWPR_Object
   public:
     vector<double> wt;
     vector<double> w;
     vector<double> w_pc_dcn;
     vector<double> w_mf_dcn;
 
-    MLandC(){
-      cout << "Child class constructor" << endl;
-      wt.push_back(0);
-      wt.push_back(0.3);
+    vector<double> a;
+    vector<double> b;
 
-      display_vector("wt", wt);
-      // printf("wt[0] = %lf \n", wt[0]);
+    double ML_prediction(const doubleVec& input_lwpr, double efferent_copy);
+    int ML_rfs();
+    void ML_update(double input_lwpr, double train_lwpr);
+
+    // Constructor
+    MLandC(int nin, int nout) : LWPR_Object(nin, nout){
+      cout << "MLandC, child of LWPR_Object, class constructor" << endl;
+
+      wt.push_back(0);
+      w.push_back(0);
+      w_pc_dcn.push_back(0);
+      w_mf_dcn.push_back(0);
+
+      setInitD(50);
+      setInitAlpha(250);
+      initLambda(0.99);
+      tauLambda(0.9);
+      finalLambda(0.99999);
+      wGen(0.2);
+      diagOnly(1);
+      updateD(0);
+      metaRate(0.3);
+      // addThreshold(0.95);
     }
 };
+
+// // Member functions
+double MLandC::ML_prediction(const doubleVec& input_lwpr, double fb_signal){
+  // LWPR prediction
+  a, b = predict_with_weights(input_lwpr);
+
+  // weights - PC dendrites
+
+  // DCN - adder/substractor
+
+  // DCN learning rules
+
+  return 0; //output_ml, output_dcn
+}
+
+// void MLandC::ML_update(double input_lwpr, double efferent_copy){
+//   update(input_lwpr, efferent_copy);
+// }
+//
+// int MLandC::ML_rfs(){
+//   int num_rfs = numRFS();
+//   cout << "num_rfs: " << num_rfs << '\n';
+//   return num_rfs;
+// }
 
 
 // extern "C" int C_main(int, char**);
 int main(int argc, char *argv[]){
-  MLandC ml;
-
-  vector<double> yp;
-  // yp(2);
+  // LWPR object
+  int nin = 10;
+  int nout = 1;
+  int njoints = 2;
+  MLandC model(nin, nout);
 
   // Server variables
   int sockfd, newsockfd, portno;
