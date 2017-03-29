@@ -117,7 +117,8 @@ int main(int argc, char *argv[]){
     bzero(buffer,256);
 
     // LWPR cycle
-    double fb_signal_torque = 2.3;
+    doubleVec fb_signal_torque;
+    fb_signal_torque.push_back(2.3);
     doubleVec efferent_copy_torque;
     efferent_copy_torque.push_back(2.3);
     doubleVec input_lwpr;

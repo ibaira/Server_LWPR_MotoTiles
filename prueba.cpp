@@ -134,8 +134,11 @@ int main(int argc, char *argv[]){
     bzero(buffer,256);
 
     // LWPR cycle
-
-
+    doubleVec inputs;
+    inputs.push_back(0);
+    doubleVec teaching_signal;
+    teaching_signal.push_back(0);
+    pred_weights = ml_dcn_1.ML_predict(inputs, teaching_signal);
 
 
 
