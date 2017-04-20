@@ -1,0 +1,1 @@
+include ':app', ':antlibrary-1.2'
