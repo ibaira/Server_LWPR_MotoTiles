@@ -1,5 +1,6 @@
 /* The port number is passed as an argument */
 #define _BSD_SOURCE
+#include <algorithm>
 #include <arpa/inet.h>
 #include <math.h>
 #include <netinet/in.h>
@@ -13,19 +14,45 @@
 #include <iostream>
 #include "LWPRandPC_DCN.hh"
 
+#include <sstream>
+
+#include <iterator>  
+#include <vector>
+#include <string>
+#include <cstdlib>
+#include <iostream>
+
 
 void error(const char *msg){
   perror(msg);
   exit(1);
 }
 
-void display_vector(const char *name, std::vector<double> v){
+void display_vector_double(const char *name, std::vector<double> v){
   std::cout << name << ": ";
   for (std::vector<double>::const_iterator i = v.begin(); i != v.end(); ++i)
     std::cout << *i << ' ';
   std::cout << std::endl;
 }
 
+void display_vector_double(std::vector<double> v){
+  for (std::vector<double>::const_iterator i = v.begin(); i != v.end(); ++i)
+    std::cout << *i << ' ';
+  std::cout << std::endl;
+}
+
+void display_vector_int(const char *name, std::vector<int> v){
+  std::cout << name << ": ";
+  for (std::vector<int>::const_iterator i = v.begin(); i != v.end(); ++i)
+    std::cout << *i << ' ';
+  std::cout << std::endl;
+}
+
+void display_vector_int(std::vector<int> v){
+  for (std::vector<int>::const_iterator i = v.begin(); i != v.end(); ++i)
+    std::cout << *i << ' ';
+  std::cout << std::endl;
+}
 
 
 
@@ -34,10 +61,10 @@ int main(int argc, char* argv[]){
   using namespace std;
 
   // LWPR object parameters
-  // int nin = 10;
-  // int nout = 1;
-  // int njoints = 2;
-  // LWPR_andPC_DCN ml_dcn_1(nin, nout, njoints);
+  int nin = 10;
+  int nout = 1;
+  int njoints = 2;
+  LWPR_andPC_DCN ml_dcn_1(nin, nout, njoints);
 
   // Server variables
   int sockfd, newsockfd, portno;
@@ -47,19 +74,16 @@ int main(int argc, char* argv[]){
   int n;
 
   // Server setup
-  if (argc < 2) {
-    fprintf(stderr,"ERROR, no port provided\n");
-    exit(1);
-  }
+  if (argc < 2)  portno = atoi("8888"); 
+  // fprintf(stderr,"ERROR, no port provided\n");  // exit(1);
+  else  portno = atoi(argv[1]);  // atoi: string to integer - printf("%s\n", argv[1]);
 
   // Create a socket: socket(int domain, int type, int protocol)
   sockfd =  socket(AF_INET, SOCK_STREAM, 0);
   if (sockfd < 0) error("ERROR opening socket");
 
   // Clear address structure: bzero() copies zeros into string
-  bzero((char*) &serv_addr, sizeof(serv_addr));
-
-  portno = atoi(argv[1]);  // atoi: convert a string to an integer - printf("%s\n", argv[1]);
+  bzero((char*) &serv_addr, sizeof(serv_addr)); 
 
   /* Setup the host_addr structure for use in bind call */
   // Server byte order
@@ -101,39 +125,78 @@ int main(int argc, char* argv[]){
 
   // Data interchange
   int iterations = 0;
-  while (iterations < 10) {
+  while (iterations < 10000) {
+    cout << "===> SERVER SENDING..." << endl;
 
-    // This send() function sends the 13 bytes of the string to the new socket
-    char* envio = "7\n"; //"Hello, world!\n");
-    send(newsockfd, envio, sizeof(envio), 0);
+    vector<int> v {0, 9, 8, 7, 6, 5, 4, 3, 2, 1};
+    v.insert(v.begin(), (int) sizeof(v));
+    cout << "The true message 'v': ";
+    display_vector_int(v);
 
-    // bzero(buffer, sizeof(buffer));
+    char buf[12] {};
+    transform(begin(v), end(v), begin(buf), 
+      [](int i) {
+        return '0' + i; 
+      }
+    );
+    cout << "After transforming 'v' to char: ";
+    cout << buf << endl; 
+  
+    send(newsockfd, (const char*) buf, sizeof(buf), 0); //buffer.size()
+    cout << "Server sends: " << buf << endl;
 
-    // LWPR cycle
-    doubleVec fb_signal_torque;
-    fb_signal_torque.push_back(2.3);
-    doubleVec efferent_copy_torque;
-    efferent_copy_torque.push_back(2.3);
-    doubleVec input_lwpr;
-    input_lwpr.push_back(32.0); 
-    // ml_dcn_1.ML_prediction(input_lwpr, fb_signal_torque);
-    // ml_dcn_1.ML_update(input_lwpr, efferent_copy_torque);
+    // Send vector
+    // stringstream result;        
+    // copy(v.begin(), v.end(), ostream_iterator<int>(result, " "));
+    // const string tmp = result.str();
+    // const char* buf = tmp.c_str();
 
+    // int nbytes =0;
+    // vector<unsigned char> buffer;
+    // buffer.resize(5000);
+    // nbytes = recv(socket, &buffer[0], buffer.size(),0);
+    // //since I want to use buffer.size() to know data length in buffer I do
+    // buffer.resize(nbytes);
 
-    string bytes2read("1,2,3,4,5,6,7,8,9,0");
+    /* LWPR cycle */
+    /* doubleVec fb_signal_torque;
+     * fb_signal_torque.push_back(2.3);
+     * doubleVec efferent_copy_torque;
+     * efferent_copy_torque.push_back(2.3);
+     * doubleVec input_lwpr;
+     * input_lwpr.push_back(32.0); 
+     * ml_dcn_1.ML_prediction(input_lwpr, fb_signal_torque);
+     * ml_dcn_1.ML_update(input_lwpr, efferent_copy_torque); 
+     */
+ 
+    cout << "\n<=== SERVER READING..." << endl;
 
-    n = read(newsockfd, buffer, bytes2read.size());
-    if (n < 0) error("ERROR reading from socket");
-    printf("Here is the message: %s\n", buffer);
+    char buffer[19];// bzero(buffer, sizeof(buffer));
+    
+    recv(newsockfd, buffer, sizeof(buffer), 0);  //bytes2read.size());
+    if (n < 0) 
+      error("ERROR reading from socket");
+    
+    /* Parse string to Vector<int>
+     * string myString = "10 15 20 23";
+     * stringstream iss( myString );
 
-    // Do stuff
+     * int number;
+     * vector<int> myNumbers;
+     * while ( iss >> number )
+     *   myNumbers.push_back( number );
+     * display_vector_int( myNumbers ); */
+    cout << "Iteration: " << iterations << endl;
+    cout << "Received message: " << buffer << endl;
+    cout << "N. Bytes: " << sizeof(buffer) << "\n\n";
+    
     ++iterations;
   }
 
   close(newsockfd);
-  cout<< "Connection with Client terminated." <<endl; 
+  cout<< "Connection with Client terminated." <<endl;   
   close(sockfd);
   cout<< "Server terminated." <<endl; 
-  return 0;
 
+  return 0;
 }
