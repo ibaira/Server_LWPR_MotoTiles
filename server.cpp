@@ -125,7 +125,7 @@ int main(int argc, char* argv[]){
 
   // Data interchange
   int iterations = 0;
-  while (iterations < 10000) {
+  while (iterations < 10000 && newsockfd > 0) {
     cout << "===> SERVER SENDING..." << endl;
 
     vector<int> v {0, 9, 8, 7, 6, 5, 4, 3, 2, 1};
@@ -136,9 +136,10 @@ int main(int argc, char* argv[]){
     char buf[12] {};
     transform(begin(v), end(v), begin(buf), 
       [](int i) {
-        return '0' + i; 
+        return (i < 12) ? ('0' + i) : ('\n'); 
       }
     );
+    buf[16] = '\n';
     cout << "After transforming 'v' to char: ";
     cout << buf << endl; 
   
@@ -171,7 +172,7 @@ int main(int argc, char* argv[]){
  
     cout << "\n<=== SERVER READING..." << endl;
 
-    char buffer[19];// bzero(buffer, sizeof(buffer));
+    char buffer[20];// bzero(buffer, sizeof(buffer));
     
     recv(newsockfd, buffer, sizeof(buffer), 0);  //bytes2read.size());
     if (n < 0) 
