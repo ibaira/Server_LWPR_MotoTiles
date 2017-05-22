@@ -14,8 +14,8 @@ import dk.dtu.antlibrary.AntConnectionException;
 import dk.dtu.antlibrary.AntData;
 import dk.dtu.antlibrary.OnMessageReceivedListener;
 
-public class MainActivity extends AppCompatActivity implements OnMessageReceivedListener {
 
+public class MainActivity extends AppCompatActivity implements OnMessageReceivedListener {
 
     Button button;
 
@@ -25,10 +25,11 @@ public class MainActivity extends AppCompatActivity implements OnMessageReceived
         setContentView(R.layout.activity_main);
 
         AntConnection.getInstance().setDebug(true); // Receive debug messages
-        // Register the messages received with this activity class. When tile send event report it will be triggered inside the listener method (8 bytes)
+        // Register the messages received with this activity class. When tile send event report, it
+        // will be triggered inside the listener method (8 bytes)
         // Event type (press, released, color)
         AntConnection.getInstance().registerMessageReceivedListener(this);
-        AntConnection.getInstance().startANT(this, 7, true); // Master ID tablet
+        AntConnection.getInstance().startANT(this, 7, true);                    // Master ID tablet
 
         // Create button
         button = (Button) findViewById(R.id.button);
@@ -49,27 +50,26 @@ public class MainActivity extends AppCompatActivity implements OnMessageReceived
 
     @Override
     public void onMessageReceived(byte[] bytes) {
-
+//        SockTest clisock;
     }
 
-
     public void changeColor() {
-
         Random r1 = new Random();
-        int color =  r1.nextInt(4)+1;
-        int tileId = r1.nextInt(2)+1;
+        int color =  r1.nextInt(4) + 1;
+        int tileId = r1.nextInt(2) + 1;
 
         AntData data;
         int message_id = 1;
         if(tilesData.containsKey((byte)tileId)) {
             data = tilesData.get((byte)tileId);
             message_id = data.getBroadcastData()[1];
-            Log.v("NBV","message_id: "+message_id+" deviceId: "+tileId);
+            Log.v("NBV","message_id: " + message_id + " deviceId: " + tileId);
         } else {
             data = new AntData((byte)tileId);
         }
 
-        // id_tile, message_id incremented every time you send a new message, command_code, color_code, 4 zeros: for byte shifting and 8 different color to set
+        // id_tile, message_id incremented every time you send a new message,
+        // command_code, color_code, 4 zeros: for byte shifting and 8 different color to set
         data.setBroadcastData(new byte[]{(byte)tileId, (byte) message_id, 0x02, (byte) color, 0, 0, 0, 0});
         tilesData.put((byte)tileId,data);
         try {
@@ -78,7 +78,6 @@ public class MainActivity extends AppCompatActivity implements OnMessageReceived
         } catch (AntConnectionException e) {
             e.printStackTrace();
         }
-
     }
 
     HashMap<Byte,AntData> tilesData = new HashMap<>();  // Key, and Data
